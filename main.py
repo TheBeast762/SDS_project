@@ -8,14 +8,16 @@ events = read_data.load_events()
 players = read_data.load_players()
 playerank = read_data.load_playerank()
 matches = read_data.load_matches()
-nations = ['Italy','England','Germany','France','Spain','European_Championship','World_Cup']
+nations = ['Italy', 'England', 'Germany','France','Spain','European_Championship','World_Cup']#,
 
 def getMatchPlayers(matchId, nation):
 	matchplayers = []
 	for match in matches[nation]:
 		if match['wyId'] == matchId:
 			for team, info in match['teamsData'].items():
-				matchplayers.extend([p['playerId'] for p in info['formation']['lineup']] + [p['playerIn'] for p in info['formation']['substitutions']])
+				matchplayers.extend([p['playerId'] for p in info['formation']['lineup']])
+				if info['formation']['substitutions'] != "null":
+					matchplayers.extend([p['playerIn'] for p in info['formation']['substitutions']])
 			return matchplayers
 
 def flow_centrality_nation(nation):
