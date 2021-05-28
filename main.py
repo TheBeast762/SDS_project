@@ -1,6 +1,8 @@
 import json
 import numpy as np 
 import read_data
+import pandas as pd
+import networkx as nx
 
 events = read_data.load_events()
 players = read_data.load_players()
@@ -8,12 +10,12 @@ playerank = read_data.load_playerank()
 matches = read_data.load_matches()
 nations = ['Italy','England','Germany','France','Spain','European_Championship','World_Cup']
 
-def getMatchPlayers(matchId):
+def getMatchPlayers(matchId, nation):
 	matchplayers = []
-	for match in matches:
+	for match in matches[nation]:
 		if match['wyId'] == matchId:
-			for team, info in match['teamsdata'].items():
-				matchplayers.append([p['playerId'] for p in info['formation']['lineup']] + [p['playerIn'] for p in info['formation']['substitutions']])
+			for team, info in match['teamsData'].items():
+				matchplayers.extend([p['playerId'] for p in info['formation']['lineup']] + [p['playerIn'] for p in info['formation']['substitutions']])
 			return matchplayers
 
 def flow_centrality_nation(nation):
@@ -25,11 +27,11 @@ def flow_centrality_nation(nation):
 			match_list_nation.append(ev['matchId'])
 	
 	df_match_ev = pd.DataFrame(list_nation_ev)
-	
-	player_flow_centrality = []
+	print("Compute flow centrality for all matches in: ", nation)
+	player_performances = {}
 	for match in match_list_nation:
 		print("Match: ", match)
-		matchplayers = getMatchPlayers(match)
+		matchplayers = getMatchPlayers(match, nation)
 		df_ev_match = df_match_ev[df_match_ev['matchId']==match]
 		df_team = df_ev_match[['playerId','eventSec']].rename(columns={'playerId':'sender'})
 		df_team['receiver'] = df_team['sender'].shift(-1).dropna()
@@ -50,8 +52,7 @@ def flow_centrality_nation(nation):
 			g.add_edge(row['sender'],row['receiver'],weight=row['Time'])
 		for player in matchplayers: 
 			try:
-				player_performances[player].append()
-				player_flow_centrality.append(nx.current_flow_betweenness_centrality(g)[player])
+				player_performances[player].append(nx.current_flow_betweenness_centrality(g)[player])
 			except KeyError:
 				if player not in g:
 					pass
